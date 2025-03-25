@@ -122,9 +122,9 @@
             const dot = document.createElement("div");
             dot.className = "dot";
             
-            // Random position with 10% margin
-            const x = 50 + Math.random() * 80;
-            const y = 50 + Math.random() * 80;
+            // Random position (10-90% of screen)
+            const x = 10 + Math.random() * 80;
+            const y = 10 + Math.random() * 80;
             
             dot.style.left = ${x}%;
             dot.style.top = ${y}%;
@@ -166,6 +166,9 @@
 
         // Start button
         startBtn.addEventListener("click", startGame);
+
+        // Debug: Confirm script loaded
+        console.log("Game initialized!");
     </script>
 </body>
-</html>
+</html>    
