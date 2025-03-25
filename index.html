@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Reflex Tester ⚡</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --dark: #121212;
+            --light: #f5f5f5;
+            --gray: #1e1e1e;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            touch-action: manipulation; /* Fixes mobile delay */
+        }
+        #leaderboard {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(30, 30, 30, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            width: 180px;
+            border: 1px solid var(--primary);
+        }
+        #game-container {
+            margin-top: 60px;
+            width: 90%;
+            max-width: 600px;
+        }
+        #game-screen {
+            width: 100%;
+            height: 400px;
+            background: var(--gray);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent; /* Removes mobile tap flash */
+        }
+        #start-btn {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        #start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px var(--primary);
+        }
+        .dot {
+            width: 100px;
+            height: 100px;
+            background: var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 0 20px var(--primary);
+        }
+        #time-display {
+            font-size: 28px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        #best-time {
+            font-size: 22px;
+            opacity: 0.9;
+        }
+        h1 {
+            margin-top: 20px;
+            color: var(--primary);
+            font-size: 2.5rem;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        @media (max-width: 600px) {
+            .dot {
+                width: 80px;
+                height: 80px;
+            }
+            #game-screen {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="leaderboard">
+        <h3>🏆 TOP SCORES</h3>
+        <ol id="scores-list"></ol>
+    </div>
+
+    <h1>⚡ REFLEX TESTER ⚡</h1>
+    <p>Click or tap the green dot as fast as you can!</p>
+
+    <div id="game-container">
+        <div id="time-display">Your time: <span id="time">0.000s</span></div>
+        <div id="best-time">Personal best: <span id="best-time-value">--</span></div>
+        
+        <div id="game-screen">
+            <button id="start-btn">START GAME</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const gameScreen = document.getElementById("game-screen");
+        const startBtn = document.getElementById("start-btn");
+        const timeDisplay = document.getElementById("time");
+        const bestTimeDisplay = document.getElementById("best-time-value");
+        const scoresList = document.getElementById("scores-list");
+
+        // Game State
+        let startTime;
+        let timeoutId;
+        let bestScores = JSON.parse(localStorage.getItem("bestScores")) || [];
+
+        // Format time as seconds.milliseconds
+        function formatTime(ms) {
+            return (ms / 1000).toFixed(3) + "s";
+        }
+
+        // Update leaderboard
+        function updateLeaderboard() {
+            scoresList.innerHTML = "";
+            bestScores.sort((a, b) => a - b).slice(0, 5).forEach(score => {
+                const li = document.createElement("li");
+                li.textContent = formatTime(score);
+                scoresList.appendChild(li);
+            });
+        }
+
+        // Start game (random delay)
+        function startGame() {
+            gameScreen.innerHTML = "";
+            gameScreen.style.backgroundColor = "var(--gray)";
+            
+            const delay = 1000 + Math.random() * 4000; // 1-5 sec delay
+            
+            timeoutId = setTimeout(() => {
+                gameScreen.innerHTML = '<div class="dot"></div>';
+                startTime = new Date().getTime();
+            }, delay);
+        }
+
+        // Handle BOTH clicks and taps
+        gameScreen.addEventListener("click", (e) => {
+            if (e.target.classList.contains("dot")) {
+                const reactionTime = new Date().getTime() - startTime;
+                timeDisplay.textContent = formatTime(reactionTime);
+                
+                // Save score
+                bestScores.push(reactionTime);
+                localStorage.setItem("bestScores", JSON.stringify(bestScores));
+                
+                // Update best time
+                const bestTime = Math.min(...bestScores);
+                bestTimeDisplay.textContent = formatTime(bestTime);
+                
+                updateLeaderboard();
+                startBtn.style.display = "block";
+                gameScreen.innerHTML = "<button id='start-btn'>TRY AGAIN</button>";
+            } else if (e.target.id === "start-btn") {
+                startGame();
+                e.target.style.display = "none";
+            }
+        });
+
+        // Initialize
+        updateLeaderboard();
+        if (bestScores.length > 0) {
+            bestTimeDisplay.textContent = formatTime(Math.min(...bestScores));
+        }
+    </script>
+</body>
+</html>
