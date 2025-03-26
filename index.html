@@ -106,6 +106,7 @@
 
         // Start game with random delay (1-5 seconds)
         function startGame() {
+            console.log("Game started!"); // Debug log
             gameScreen.innerHTML = "";
             resultDisplay.textContent = "Wait for the green dot...";
             gameActive = true;
@@ -115,6 +116,7 @@
             timeoutId = setTimeout(() => {
                 createDot();
                 startTime = Date.now();
+                console.log("Dot appeared at:", startTime); // Debug log
             }, delay);
         }
 
@@ -131,10 +133,12 @@
             dot.style.top = ${y}%;
             
             gameScreen.appendChild(dot);
+            console.log("Dot position:", x, y); // Debug log
         }
 
         // Handle clicks
-        gameScreen.addEventListener("click", (e) => {
+        function handleClick(e) {
+            console.log("Click detected on:", e.target); // Debug log
             if (!gameActive) return;
             
             if (e.target.classList.contains("dot")) {
@@ -146,6 +150,7 @@
                 localStorage.setItem("bestScores", JSON.stringify(bestScores));
                 
                 gameActive = false;
+                startBtn.style.display = "block";
             } else {
                 // Clicked too soon!
                 clearTimeout(timeoutId);
@@ -155,21 +160,23 @@
                     resultDisplay.classList.remove("penalty");
                 }, 1000);
                 gameActive = false;
+                startBtn.style.display = "block";
             }
-        });
+        }
 
         // Reset all scores
-        resetBtn.addEventListener("click", () => {
+        function resetScores() {
             bestScores = [];
             localStorage.removeItem("bestScores");
             resultDisplay.textContent = "Scores reset!";
-        });
+        }
 
-        // Start button
+        // Initialize
+        gameScreen.addEventListener("click", handleClick);
         startBtn.addEventListener("click", startGame);
+        resetBtn.addEventListener("click", resetScores);
 
-        // Debug logs
-        console.log("Game initialized!");
+        console.log("Game initialized!"); // Debug log
     </script>
 </body>
 </html>
