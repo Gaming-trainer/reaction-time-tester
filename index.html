@@ -104,19 +104,20 @@
         let gameActive = false;
         let bestScores = JSON.parse(localStorage.getItem("bestScores")) || [];
 
-        // Start game with random delay (1-5 seconds)
+        // Start game with random delay (1-3 seconds)
         function startGame() {
-            console.log("Game started!"); // Debug log
+            console.log("[DEBUG] Game started");
             gameScreen.innerHTML = "";
             resultDisplay.textContent = "Wait for the green dot...";
             gameActive = true;
+            startBtn.style.display = "none";
             
-            const delay = 1000 + Math.random() * 4000;
+            const delay = 1000 + Math.random() * 2000;
             
             timeoutId = setTimeout(() => {
                 createDot();
                 startTime = Date.now();
-                console.log("Dot appeared at:", startTime); // Debug log
+                console.log("[DEBUG] Dot appeared at:", startTime);
             }, delay);
         }
 
@@ -125,20 +126,19 @@
             const dot = document.createElement("div");
             dot.className = "dot";
             
-            // Random position (10-90% of screen)
-            const x = 10 + Math.random() * 80;
-            const y = 10 + Math.random() * 80;
+            // Random position (20-80% of screen)
+            const x = 20 + Math.random() * 60;
+            const y = 20 + Math.random() * 60;
             
             dot.style.left = ${x}%;
             dot.style.top = ${y}%;
             
             gameScreen.appendChild(dot);
-            console.log("Dot position:", x, y); // Debug log
+            console.log("[DEBUG] Dot position:", x, y);
         }
 
         // Handle clicks
         function handleClick(e) {
-            console.log("Click detected on:", e.target); // Debug log
             if (!gameActive) return;
             
             if (e.target.classList.contains("dot")) {
@@ -151,6 +151,7 @@
                 
                 gameActive = false;
                 startBtn.style.display = "block";
+                gameScreen.innerHTML = "";
             } else {
                 // Clicked too soon!
                 clearTimeout(timeoutId);
@@ -158,6 +159,7 @@
                 resultDisplay.classList.add("penalty");
                 setTimeout(() => {
                     resultDisplay.classList.remove("penalty");
+                    resultDisplay.textContent = "Press START to try again";
                 }, 1000);
                 gameActive = false;
                 startBtn.style.display = "block";
@@ -176,7 +178,7 @@
         startBtn.addEventListener("click", startGame);
         resetBtn.addEventListener("click", resetScores);
 
-        console.log("Game initialized!"); // Debug log
+        console.log("[DEBUG] Game initialized");
     </script>
 </body>
 </html>
