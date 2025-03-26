@@ -13,7 +13,7 @@
             --red: #f44336;
         }
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             background: var(--dark);
             color: var(--light);
             margin: 0;
@@ -38,6 +38,7 @@
             margin: 30px 0;
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
         .dot {
             width: 100px;
@@ -113,7 +114,7 @@
             
             timeoutId = setTimeout(() => {
                 createDot();
-                startTime = new Date().getTime();
+                startTime = Date.now();
             }, delay);
         }
 
@@ -137,7 +138,7 @@
             if (!gameActive) return;
             
             if (e.target.classList.contains("dot")) {
-                const reactionTime = (new Date().getTime() - startTime) / 1000;
+                const reactionTime = (Date.now() - startTime) / 1000;
                 resultDisplay.textContent = Your time: ${reactionTime.toFixed(3)}s;
                 
                 // Save score
@@ -167,8 +168,8 @@
         // Start button
         startBtn.addEventListener("click", startGame);
 
-        // Debug: Confirm script loaded
+        // Debug logs
         console.log("Game initialized!");
     </script>
 </body>
-</html>    
+</html>
