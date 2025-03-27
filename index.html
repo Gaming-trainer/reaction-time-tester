@@ -11,7 +11,6 @@
             --dark: #121212;
             --light: #f5f5f5;
             --gray: #1e1e1e;
-            --red: #f44336;
         }
         body {
             font-family: Arial, sans-serif;
@@ -24,61 +23,6 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
-        }
-        #leaderboard {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(30, 30, 30, 0.9);
-            padding: 15px;
-            border-radius: 10px;
-            width: 200px;
-        }
-        #game-container {
-            margin-top: 60px;
-            width: 90%;
-            max-width: 600px;
-        }
-        #game-screen {
-            width: 100%;
-            height: 400px;
-            background: var(--gray);
-            border-radius: 10px;
-            margin: 20px 0;
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-        }
-        .dot {
-            width: 100px;
-            height: 100px;
-            background: var(--primary);
-            border-radius: 50%;
-            position: absolute;
-            box-shadow: 0 0 20px var(--primary);
-            transform: translate(-50%, -50%);
-            transition: transform 0.1s;
-        }
-        button {
-            padding: 12px 30px;
-            font-size: 18px;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        #start-btn { background: var(--primary); }
-        #back-btn { background: var(--gray); }
-        #result {
-            font-size: 24px;
-            margin: 20px 0;
-            min-height: 36px;
-        }
-        .timer {
-            font-size: 20px;
-            margin-bottom: 10px;
-            color: var(--secondary);
         }
         #mode-selection {
             position: fixed;
@@ -101,45 +45,98 @@
             cursor: pointer;
             border: none;
             color: white;
-            transition: transform 0.2s;
             width: 300px;
         }
         #reflex-btn { background: var(--primary); }
         #speed-btn { background: var(--secondary); }
+        #game-container {
+            display: none;
+            width: 90%;
+            max-width: 600px;
+            flex-direction: column;
+            align-items: center;
+        }
+        #game-screen {
+            width: 100%;
+            height: 400px;
+            background: var(--gray);
+            border-radius: 10px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .dot {
+            width: 100px;
+            height: 100px;
+            background: var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 0 20px var(--primary);
+            transform: translate(-50%, -50%);
+        }
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        #start-btn { background: var(--primary); }
+        #back-btn { background: var(--gray); }
+        #result {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        .timer {
+            font-size: 20px;
+            margin: 10px 0;
+            color: var(--secondary);
+        }
+        .instruction {
+            margin: 20px 0;
+            font-size: 18px;
+            max-width: 400px;
+        }
+        #leaderboard {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(30, 30, 30, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            width: 200px;
+        }
+        .score-list {
+            list-style: none;
+            padding: 0;
+        }
     </style>
 </head>
 <body>
-    <!-- Mode Selection -->
-    <div id="mode-selection">
-        <h1>Choose Your Challenge</h1>
-        <button id="reflex-btn" class="mode-btn">
-            ⚡ Reflex Tester<br>
-            <small>Measure reaction time</small>
-        </button>
-        <button id="speed-btn" class="mode-btn">
-            🎯 Speed Clicker<br>
-            <small>Test clicks in 30 seconds</small>
-        </button>
-    </div>
-
     <!-- Leaderboard -->
     <div id="leaderboard">
         <h3>🏆 Best Scores</h3>
-        <div id="mode-display">Mode: <span id="current-mode">-</span></div>
-        <div id="reflex-scores">
-            <h4>⚡ Reflex</h4>
-            <ol id="reflex-scores-list"></ol>
-        </div>
-        <div id="speed-scores">
-            <h4>🎯 Speed</h4>
-            <ol id="speed-scores-list"></ol>
-        </div>
+        <h4>⚡ Reflex</h4>
+        <ol id="reflex-scores" class="score-list"></ol>
+        <h4>🎯 Speed</h4>
+        <ol id="speed-scores" class="score-list"></ol>
+    </div>
+
+    <!-- Mode Selection -->
+    <div id="mode-selection">
+        <h1>Choose Your Challenge</h1>
+        <button id="reflex-btn" class="mode-btn">⚡ Reflex Tester</button>
+        <button id="speed-btn" class="mode-btn">🎯 Speed Clicker</button>
     </div>
 
     <!-- Game UI -->
     <div id="game-container">
-        <h1 id="game-title">⚡ Reflex Tester</h1>
-        <div id="result">Select a mode to begin</div>
+        <h1 id="game-title"></h1>
+        <div id="instruction" class="instruction"></div>
+        <div id="result"></div>
         <div class="timer" id="timer"></div>
         <div id="game-screen"></div>
         <div>
@@ -155,13 +152,14 @@
         const resultDisplay = document.getElementById("result");
         const timerDisplay = document.getElementById("timer");
         const gameTitle = document.getElementById("game-title");
-        const currentModeDisplay = document.getElementById("current-mode");
-        const reflexScoresList = document.getElementById("reflex-scores-list");
-        const speedScoresList = document.getElementById("speed-scores-list");
+        const instruction = document.getElementById("instruction");
         const modeSelection = document.getElementById("mode-selection");
+        const gameContainer = document.getElementById("game-container");
         const reflexBtn = document.getElementById("reflex-btn");
         const speedBtn = document.getElementById("speed-btn");
         const backBtn = document.getElementById("back-btn");
+        const reflexScoresList = document.getElementById("reflex-scores");
+        const speedScoresList = document.getElementById("speed-scores");
 
         // Game state
         let startTime;
@@ -170,31 +168,15 @@
         let currentMode = "";
         let dotCount = 0;
         let gameTimer;
-        let lastClickTime = 0;
         const SPEED_MODE_DURATION = 30;
         let bestScores = { reflex: [], speed: [] };
 
-        // Initialize
-        loadScores();
-        updateLeaderboards();
-
-        /* ===== CORE FUNCTIONS ===== */
+        // Load scores
         function loadScores() {
-            try {
-                const saved = JSON.parse(localStorage.getItem("bestScores")) || {};
-                bestScores.reflex = saved.reflex || [];
-                bestScores.speed = saved.speed || [];
-            } catch (e) {
-                console.warn("Failed to load scores:", e);
-            }
-        }
-
-        function saveScores() {
-            try {
-                localStorage.setItem("bestScores", JSON.stringify(bestScores));
-            } catch (e) {
-                console.warn("Failed to save scores:", e);
-            }
+            const saved = JSON.parse(localStorage.getItem("bestScores")) || {};
+            bestScores.reflex = saved.reflex || [];
+            bestScores.speed = saved.speed || [];
+            updateLeaderboards();
         }
 
         function updateLeaderboards() {
@@ -212,10 +194,30 @@
                 .forEach(score => {
                     const li = document.createElement("li");
                     li.textContent = mode === "reflex" 
-                        ? `${score.time.toFixed(3)}s`
+                        ? `${score.time.toFixed(3)}s` 
                         : `${score.score} clicks`;
                     list.appendChild(li);
                 });
+        }
+
+        function saveScores() {
+            localStorage.setItem("bestScores", JSON.stringify(bestScores));
+        }
+
+        // Game functions
+        function startGameMode() {
+            modeSelection.style.display = "none";
+            gameContainer.style.display = "flex";
+            
+            if (currentMode === "reflex") {
+                gameTitle.textContent = "⚡ Reflex Tester";
+                instruction.textContent = "Click the green dot as soon as it appears!";
+            } else {
+                gameTitle.textContent = "🎯 Speed Clicker";
+                instruction.textContent = "Click as many dots as you can in 30 seconds!";
+            }
+            
+            resetGame();
         }
 
         function resetGame() {
@@ -226,30 +228,21 @@
             startBtn.style.display = "block";
             timerDisplay.textContent = "";
             dotCount = 0;
-            
-            if (currentMode === "reflex") {
-                resultDisplay.textContent = "Press START to begin";
-            } else {
-                resultDisplay.textContent = "Click as many dots as possible!";
-            }
+            resultDisplay.textContent = "";
         }
 
         function startGame() {
             resetGame();
             gameActive = true;
             startBtn.style.display = "none";
-            dotCount = 0;
             
             if (currentMode === "reflex") {
-                resultDisplay.textContent = "Wait for the green dot...";
                 const delay = 1000 + Math.random() * 4000;
-                
                 timeoutId = setTimeout(() => {
                     createDot(true);
                     startTime = Date.now();
                 }, delay);
             } else {
-                resultDisplay.textContent = "Click as many dots as possible!";
                 startTime = Date.now();
                 createDot(false);
                 
@@ -272,52 +265,57 @@
             gameScreen.innerHTML = "";
             const dot = document.createElement("div");
             dot.className = "dot";
-            
-            if (center) {
-                dot.style.left = "50%";
-                dot.style.top = "50%";
-            } else {
-                dot.style.left = (20 + Math.random() * 60) + "%";
-                dot.style.top = (20 + Math.random() * 60) + "%";
-            }
-            
+            dot.style.left = center ? "50%" : (20 + Math.random() * 60) + "%";
+            dot.style.top = center ? "50%" : (20 + Math.random() * 60) + "%";
             gameScreen.appendChild(dot);
         }
 
         function endSpeedMode() {
             gameActive = false;
-            gameScreen.innerHTML = "";
-            resultDisplay.textContent = `Final score: ${dotCount} clicks`;
+            resultDisplay.textContent = `Final score: ${dotCount} clicks!`;
             
             bestScores.speed.push({
                 score: dotCount,
                 date: new Date().toISOString()
             });
             saveScores();
-            updateLeaderboard("speed");
+            updateLeaderboards();
             
             startBtn.style.display = "block";
         }
 
-        /* ===== EVENT HANDLERS ===== */
+        // Event listeners
+        reflexBtn.addEventListener("click", () => {
+            currentMode = "reflex";
+            startGameMode();
+        });
+
+        speedBtn.addEventListener("click", () => {
+            currentMode = "speed";
+            startGameMode();
+        });
+
+        backBtn.addEventListener("click", () => {
+            modeSelection.style.display = "flex";
+            gameContainer.style.display = "none";
+        });
+
+        startBtn.addEventListener("click", startGame);
+
         gameScreen.addEventListener("click", (e) => {
             if (!gameActive) return;
-            
-            const now = Date.now();
-            if (currentMode === "speed" && now - lastClickTime < 100) return;
-            lastClickTime = now;
             
             if (e.target.classList.contains("dot")) {
                 if (currentMode === "reflex") {
                     const reactionTime = (Date.now() - startTime) / 1000;
-                    resultDisplay.textContent = `Your time: ${reactionTime.toFixed(3)}s`;
+                    resultDisplay.textContent =`Your time: ${reactionTime.toFixed(3)}s`;
                     
                     bestScores.reflex.push({
                         time: reactionTime,
                         date: new Date().toISOString()
                     });
                     saveScores();
-                    updateLeaderboard("reflex");
+                    updateLeaderboards();
                     
                     gameActive = false;
                     startBtn.style.display = "block";
@@ -328,42 +326,15 @@
                 }
             } else if (currentMode === "reflex") {
                 clearTimeout(timeoutId);
-                resultDisplay.textContent = "TOO SOON! Wait for the dot";
-                setTimeout(() => {
-                    resultDisplay.textContent = "Press START to try again";
-                }, 1000);
+                resultDisplay.textContent = "Too soon! Wait for the dot.";
+                setTimeout(() => resultDisplay.textContent = "", 1000);
                 gameActive = false;
                 startBtn.style.display = "block";
             }
         });
 
-        reflexBtn.addEventListener("click", () => {
-            currentMode = "reflex";
-            currentModeDisplay.textContent = "Reflex";
-            gameTitle.textContent = "⚡ Reflex Tester";
-            startGameMode();
-        });
-
-        speedBtn.addEventListener("click", () => {
-            currentMode = "speed";
-            currentModeDisplay.textContent = "Speed";
-            gameTitle.textContent = "🎯 Speed Clicker";
-            startGameMode();
-        });
-
-        backBtn.addEventListener("click", () => {
-            modeSelection.style.display = "flex";
-            gameContainer.style.display = "none";
-            resetGame();
-        });
-
-        startBtn.addEventListener("click", startGame);
-
-        function startGameMode() {
-            modeSelection.style.display = "none";
-            gameContainer.style.display = "block";
-            resetGame();
-        }
+        // Initialize
+        loadScores();
     </script>
 </body>
 </html>
