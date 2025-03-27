@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ Reflex Trainer Pro ⚡</title>
+    <title>Dual Mode Challenge</title>
     <style>
         :root {
             --primary: #4CAF50;
+            --secondary: #2196F3;
             --dark: #121212;
             --light: #f5f5f5;
             --gray: #1e1e1e;
@@ -23,7 +24,6 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
-            touch-action: manipulation;
         }
         #leaderboard {
             position: fixed;
@@ -32,7 +32,7 @@
             background: rgba(30, 30, 30, 0.9);
             padding: 15px;
             border-radius: 10px;
-            width: 180px;
+            width: 200px;
         }
         #game-container {
             margin-top: 60px;
@@ -44,7 +44,7 @@
             height: 400px;
             background: var(--gray);
             border-radius: 10px;
-            margin: 30px 0;
+            margin: 20px 0;
             position: relative;
             overflow: hidden;
             cursor: pointer;
@@ -56,54 +56,95 @@
             border-radius: 50%;
             position: absolute;
             box-shadow: 0 0 20px var(--primary);
-            top: 50%;
-            left: 50%;
             transform: translate(-50%, -50%);
-        }
-        #controls {
-            margin-top: 20px;
+            transition: transform 0.1s;
         }
         button {
             padding: 12px 30px;
             font-size: 18px;
-            background: var(--primary);
             color: white;
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            margin: 0 10px;
+            margin: 5px;
         }
+        #start-btn { background: var(--primary); }
+        #back-btn { background: var(--gray); }
         #result {
             font-size: 24px;
             margin: 20px 0;
             min-height: 36px;
         }
-        .penalty {
-            color: var(--red);
-            animation: shake 0.5s;
+        .timer {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: var(--secondary);
         }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
+        #mode-selection {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
         }
+        .mode-btn {
+            padding: 20px 40px;
+            margin: 15px;
+            font-size: 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            transition: transform 0.2s;
+            width: 300px;
+        }
+        #reflex-btn { background: var(--primary); }
+        #speed-btn { background: var(--secondary); }
     </style>
 </head>
 <body>
-    <div id="leaderboard">
-        <h3>🏆 Best Scores</h3>
-        <ol id="scores-list"></ol>
+    <!-- Mode Selection -->
+    <div id="mode-selection">
+        <h1>Choose Your Challenge</h1>
+        <button id="reflex-btn" class="mode-btn">
+            ⚡ Reflex Tester<br>
+            <small>Measure reaction time</small>
+        </button>
+        <button id="speed-btn" class="mode-btn">
+            🎯 Speed Clicker<br>
+            <small>Test clicks in 30 seconds</small>
+        </button>
     </div>
 
-    <h1>⚡ REFLEX TRAINER PRO ⚡</h1>
-    <p>Click ONLY when the green dot appears!</p>
+    <!-- Leaderboard -->
+    <div id="leaderboard">
+        <h3>🏆 Best Scores</h3>
+        <div id="mode-display">Mode: <span id="current-mode">-</span></div>
+        <div id="reflex-scores">
+            <h4>⚡ Reflex</h4>
+            <ol id="reflex-scores-list"></ol>
+        </div>
+        <div id="speed-scores">
+            <h4>🎯 Speed</h4>
+            <ol id="speed-scores-list"></ol>
+        </div>
+    </div>
 
+    <!-- Game UI -->
     <div id="game-container">
+        <h1 id="game-title">⚡ Reflex Tester</h1>
+        <div id="result">Select a mode to begin</div>
+        <div class="timer" id="timer"></div>
         <div id="game-screen"></div>
-        <div id="result">Press START to begin</div>
-        <div id="controls">
+        <div>
             <button id="start-btn">START</button>
-            <button id="reset-btn">RESET SCORES</button>
+            <button id="back-btn">BACK TO MENU</button>
         </div>
     </div>
 
@@ -111,64 +152,184 @@
         // Game elements
         const gameScreen = document.getElementById("game-screen");
         const startBtn = document.getElementById("start-btn");
-        const resetBtn = document.getElementById("reset-btn");
         const resultDisplay = document.getElementById("result");
-        const scoresList = document.getElementById("scores-list");
+        const timerDisplay = document.getElementById("timer");
+        const gameTitle = document.getElementById("game-title");
+        const currentModeDisplay = document.getElementById("current-mode");
+        const reflexScoresList = document.getElementById("reflex-scores-list");
+        const speedScoresList = document.getElementById("speed-scores-list");
+        const modeSelection = document.getElementById("mode-selection");
+        const reflexBtn = document.getElementById("reflex-btn");
+        const speedBtn = document.getElementById("speed-btn");
+        const backBtn = document.getElementById("back-btn");
 
         // Game state
         let startTime;
         let timeoutId;
         let gameActive = false;
-        let bestScores = JSON.parse(localStorage.getItem("bestScores")) || [];
+        let currentMode = "";
+        let dotCount = 0;
+        let gameTimer;
+        let lastClickTime = 0;
+        const SPEED_MODE_DURATION = 30;
+        let bestScores = { reflex: [], speed: [] };
 
-        // Update leaderboard
-        function updateLeaderboard() {
-            scoresList.innerHTML = "";
-            bestScores.sort((a, b) => a - b).slice(0, 5).forEach(score => {
-                const li = document.createElement("li");
-                li.textContent = score.toFixed(3) + "s";
-                scoresList.appendChild(li);
-            });
+        // Initialize
+        loadScores();
+        updateLeaderboards();
+
+        /* ===== CORE FUNCTIONS ===== */
+        function loadScores() {
+            try {
+                const saved = JSON.parse(localStorage.getItem("bestScores")) || {};
+                bestScores.reflex = saved.reflex || [];
+                bestScores.speed = saved.speed || [];
+            } catch (e) {
+                console.warn("Failed to load scores:", e);
+            }
         }
 
-        // Start game (dot appears center screen)
-        function startGame() {
+        function saveScores() {
+            try {
+                localStorage.setItem("bestScores", JSON.stringify(bestScores));
+            } catch (e) {
+                console.warn("Failed to save scores:", e);
+            }
+        }
+
+        function updateLeaderboards() {
+            updateLeaderboard("reflex");
+            updateLeaderboard("speed");
+        }
+
+        function updateLeaderboard(mode) {
+            const list = mode === "reflex" ? reflexScoresList : speedScoresList;
+            list.innerHTML = "";
+            
+            bestScores[mode]
+                .sort((a, b) => mode === "reflex" ? a.time - b.time : b.score - a.score)
+                .slice(0, 5)
+                .forEach(score => {
+                    const li = document.createElement("li");
+                    li.textContent = mode === "reflex" 
+                        ? `${score.time.toFixed(3)}s`
+                        : `${score.score} clicks`;
+                    list.appendChild(li);
+                });
+        }
+
+        function resetGame() {
+            clearTimeout(timeoutId);
+            clearInterval(gameTimer);
             gameScreen.innerHTML = "";
-            resultDisplay.textContent = "Wait for the green dot...";
+            gameActive = false;
+            startBtn.style.display = "block";
+            timerDisplay.textContent = "";
+            dotCount = 0;
+            
+            if (currentMode === "reflex") {
+                resultDisplay.textContent = "Press START to begin";
+            } else {
+                resultDisplay.textContent = "Click as many dots as possible!";
+            }
+        }
+
+        function startGame() {
+            resetGame();
             gameActive = true;
             startBtn.style.display = "none";
+            dotCount = 0;
             
-            const delay = 1000 + Math.random() * 4000;
-            
-            timeoutId = setTimeout(() => {
-                const dot = document.createElement("div");
-                dot.className = "dot";
-                gameScreen.appendChild(dot);
+            if (currentMode === "reflex") {
+                resultDisplay.textContent = "Wait for the green dot...";
+                const delay = 1000 + Math.random() * 4000;
+                
+                timeoutId = setTimeout(() => {
+                    createDot(true);
+                    startTime = Date.now();
+                }, delay);
+            } else {
+                resultDisplay.textContent = "Click as many dots as possible!";
                 startTime = Date.now();
-            }, delay);
+                createDot(false);
+                
+                let timeLeft = SPEED_MODE_DURATION;
+                timerDisplay.textContent = `Time: ${timeLeft}s`;
+                
+                gameTimer = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = `Time: ${timeLeft}s`;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(gameTimer);
+                        endSpeedMode();
+                    }
+                }, 1000);
+            }
         }
 
-        // Handle clicks
+        function createDot(center) {
+            gameScreen.innerHTML = "";
+            const dot = document.createElement("div");
+            dot.className = "dot";
+            
+            if (center) {
+                dot.style.left = "50%";
+                dot.style.top = "50%";
+            } else {
+                dot.style.left = (20 + Math.random() * 60) + "%";
+                dot.style.top = (20 + Math.random() * 60) + "%";
+            }
+            
+            gameScreen.appendChild(dot);
+        }
+
+        function endSpeedMode() {
+            gameActive = false;
+            gameScreen.innerHTML = "";
+            resultDisplay.textContent = `Final score: ${dotCount} clicks`;
+            
+            bestScores.speed.push({
+                score: dotCount,
+                date: new Date().toISOString()
+            });
+            saveScores();
+            updateLeaderboard("speed");
+            
+            startBtn.style.display = "block";
+        }
+
+        /* ===== EVENT HANDLERS ===== */
         gameScreen.addEventListener("click", (e) => {
             if (!gameActive) return;
             
+            const now = Date.now();
+            if (currentMode === "speed" && now - lastClickTime < 100) return;
+            lastClickTime = now;
+            
             if (e.target.classList.contains("dot")) {
-                const reactionTime = (Date.now() - startTime) / 1000;
-                resultDisplay.textContent = "Your time: " + reactionTime.toFixed(3) + "s";
-                
-                // Save score
-                bestScores.push(reactionTime);
-                localStorage.setItem("bestScores", JSON.stringify(bestScores));
-                updateLeaderboard();
-                
-                gameActive = false;
-                startBtn.style.display = "block";
-            } else {
+                if (currentMode === "reflex") {
+                    const reactionTime = (Date.now() - startTime) / 1000;
+                    resultDisplay.textContent = `Your time: ${reactionTime.toFixed(3)}s`;
+                    
+                    bestScores.reflex.push({
+                        time: reactionTime,
+                        date: new Date().toISOString()
+                    });
+                    saveScores();
+                    updateLeaderboard("reflex");
+                    
+                    gameActive = false;
+                    startBtn.style.display = "block";
+                } else {
+                    dotCount++;
+                    resultDisplay.textContent = `Clicks: ${dotCount}`;
+                    createDot(false);
+                }
+            } else if (currentMode === "reflex") {
                 clearTimeout(timeoutId);
                 resultDisplay.textContent = "TOO SOON! Wait for the dot";
-                resultDisplay.classList.add("penalty");
                 setTimeout(() => {
-                    resultDisplay.classList.remove("penalty");
                     resultDisplay.textContent = "Press START to try again";
                 }, 1000);
                 gameActive = false;
@@ -176,17 +337,33 @@
             }
         });
 
-        // Reset scores
-        resetBtn.addEventListener("click", () => {
-            bestScores = [];
-            localStorage.removeItem("bestScores");
-            updateLeaderboard();
-            resultDisplay.textContent = "Scores reset!";
+        reflexBtn.addEventListener("click", () => {
+            currentMode = "reflex";
+            currentModeDisplay.textContent = "Reflex";
+            gameTitle.textContent = "⚡ Reflex Tester";
+            startGameMode();
         });
 
-        // Initialize
-        updateLeaderboard();
+        speedBtn.addEventListener("click", () => {
+            currentMode = "speed";
+            currentModeDisplay.textContent = "Speed";
+            gameTitle.textContent = "🎯 Speed Clicker";
+            startGameMode();
+        });
+
+        backBtn.addEventListener("click", () => {
+            modeSelection.style.display = "flex";
+            gameContainer.style.display = "none";
+            resetGame();
+        });
+
         startBtn.addEventListener("click", startGame);
+
+        function startGameMode() {
+            modeSelection.style.display = "none";
+            gameContainer.style.display = "block";
+            resetGame();
+        }
     </script>
 </body>
 </html>
